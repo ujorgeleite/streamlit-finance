@@ -93,6 +93,20 @@ with col2:
 total_savings = total_incomes - total_bills
 savings_rate = (total_savings / total_incomes * 100) if total_incomes > 0 else 0
 
+# Calculate credit card expenses
+credit_card_keywords = ['card', 'cartão', 'itau', 'pedralli', 'caixa', 'nubank', 'santander', 'bradesco']
+credit_card_expenses = df[
+    df['Finalidade'].notna() & 
+    df['Valor'].notna() & 
+    df['Finalidade'].str.lower().str.contains('|'.join(credit_card_keywords), na=False)
+]['Valor'].sum()
+
+credit_card_percentage = (credit_card_expenses / total_bills * 100) if total_bills > 0 else 0
+
+# Calculate remaining expenses (non-credit card)
+other_expenses = total_bills - credit_card_expenses
+other_percentage = (other_expenses / total_bills * 100) if total_bills > 0 else 0
+
 # Add savings metric
 col3, col4 = st.columns(2)
 with col3:
@@ -107,6 +121,23 @@ with col4:
         "Bills Pagas",
         f"R$ {total_paid_bills:,.2f}",
         delta=f"{(total_paid_bills/total_bills*100):.1f}% das despesas" if total_bills > 0 else "0%",
+        delta_color="normal",
+    )
+
+# Add credit card metric in a new row
+col5, col6 = st.columns(2)
+with col5:
+    st.metric(
+        "Gastos com Cartão",
+        f"R$ {credit_card_expenses:,.2f}",
+        delta=f"{credit_card_percentage:.1f}% das despesas",
+        delta_color="inverse",  # Red for credit card expenses
+    )
+with col6:
+    st.metric(
+        "Outras Despesas",
+        f"R$ {other_expenses:,.2f}",
+        delta=f"{other_percentage:.1f}% das despesas",
         delta_color="normal",
     )
 
@@ -163,6 +194,20 @@ fig_paid.update_layout(
 )
 st.plotly_chart(fig_paid, use_container_width=True)
 
+# 3.5 Credit Card vs Other Expenses
+fig_credit = go.Figure(data=[go.Pie(
+    labels=['Cartão de Crédito', 'Outras Despesas'],
+    values=[credit_card_expenses, other_expenses],
+    marker_colors=['#ff6b6b', '#4ecdc4'],
+    textinfo='label+percent+value',
+    texttemplate='%{label}<br>R$ %{value:,.0f}<br>(%{percent:.1%})'
+)])
+fig_credit.update_layout(
+    title='Distribuição: Cartão vs Outras Despesas',
+    height=400
+)
+st.plotly_chart(fig_credit, use_container_width=True)
+
 # 4. Financial Trend (if multiple periods available)
 if len(df_years) > 1:
     st.subheader("📈 Tendência Financeira")
@@ -215,6 +260,70 @@ if len(df_years) > 1:
     )
     
     st.plotly_chart(fig_trend, use_container_width=True)
+
+# 4.5 Credit Card Trend Analysis
+if len(df_years) > 1:
+    st.subheader("💳 Tendência dos Gastos com Cartão")
+    
+    credit_trend_data = []
+    for period in periods_to_show:
+        period_df = pd.read_excel(excel_file, sheet_name=period)
+        period_credit_expenses = period_df[
+            period_df['Finalidade'].notna() & 
+            period_df['Valor'].notna() & 
+            period_df['Finalidade'].str.lower().str.contains('|'.join(credit_card_keywords), na=False)
+        ]['Valor'].sum()
+        
+        period_total_expenses = period_df[period_df['Valor'].notna()]['Valor'].sum()
+        credit_percentage = (period_credit_expenses / period_total_expenses * 100) if period_total_expenses > 0 else 0
+        
+        credit_trend_data.append({
+            'Periodo': period,
+            'Gastos_Cartao': period_credit_expenses,
+            'Percentual': credit_percentage
+        })
+    
+    credit_trend_df = pd.DataFrame(credit_trend_data)
+    
+    # Create subplot for credit card trend
+    fig_credit_trend = make_subplots(
+        rows=2, cols=1,
+        subplot_titles=('Gastos com Cartão (R$)', 'Percentual do Total (%)'),
+        vertical_spacing=0.1
+    )
+    
+    # Bar chart for credit card expenses
+    fig_credit_trend.add_trace(
+        go.Bar(
+            x=credit_trend_df['Periodo'],
+            y=credit_trend_df['Gastos_Cartao'],
+            name='Gastos com Cartão',
+            marker_color='#ff6b6b'
+        ),
+        row=1, col=1
+    )
+    
+    # Line chart for percentage
+    fig_credit_trend.add_trace(
+        go.Scatter(
+            x=credit_trend_df['Periodo'],
+            y=credit_trend_df['Percentual'],
+            mode='lines+markers',
+            name='% do Total',
+            line=dict(color='#ff6b6b', width=3)
+        ),
+        row=2, col=1
+    )
+    
+    fig_credit_trend.update_layout(
+        height=500,
+        showlegend=False
+    )
+    
+    fig_credit_trend.update_yaxes(title_text="Valor (R$)", row=1, col=1)
+    fig_credit_trend.update_yaxes(title_text="Percentual (%)", row=2, col=1)
+    
+    st.plotly_chart(fig_credit_trend, use_container_width=True)
 
 # 5. Savings Rate Gauge
 fig_gauge = go.Figure(go.Indicator(

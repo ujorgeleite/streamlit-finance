@@ -37,7 +37,7 @@ if len(df_years) >= 3:
         "Selecione o mês final para análise:",
         available_end_months,
         index=len(available_end_months) - 1,  # Default to the last available month
-        help="Escolha o mês final para analisar esse mês e os 2 meses anteriores"
+        help="Escolha o mês final para analisar esse mês e os 2 meses anteriores. A análise incluirá automaticamente os 2 meses anteriores ao selecionado."
     )
     
     # Find the index of the selected month
@@ -117,7 +117,8 @@ with col1:
         "Renda Total (3 meses)",
         f"R$ {total_3m_income:,.2f}",
         delta=f"R$ {avg_monthly_income:,.0f}/mês",
-        delta_color="normal"
+        delta_color="normal",
+        help="Soma total de todas as rendas recebidas nos 3 meses analisados. O delta mostra a média mensal."
     )
 
 with col2:
@@ -125,7 +126,8 @@ with col2:
         "Despesas Totais (3 meses)",
         f"R$ {total_3m_expenses:,.2f}",
         delta=f"R$ {avg_monthly_expenses:,.0f}/mês",
-        delta_color="inverse"
+        delta_color="inverse",
+        help="Soma total de todas as despesas nos 3 meses analisados. O delta mostra a média mensal."
     )
 
 with col3:
@@ -133,7 +135,8 @@ with col3:
         "Economia Total (3 meses)",
         f"R$ {total_3m_savings:,.2f}",
         delta=f"{avg_savings_rate:.1f}% média",
-        delta_color="normal" if total_3m_savings >= 0 else "inverse"
+        delta_color="normal" if total_3m_savings >= 0 else "inverse",
+        help="Diferença entre renda total e despesas totais. O delta mostra a taxa média de economia."
     )
 
 with col4:
@@ -141,7 +144,8 @@ with col4:
         "Tendência Renda",
         f"{income_trend:+.1f}%",
         delta="vs primeiro mês",
-        delta_color="normal" if income_trend >= 0 else "inverse"
+        delta_color="normal" if income_trend >= 0 else "inverse",
+        help="Variação percentual da renda comparando o último mês com o primeiro mês do período."
     )
 
 # Monthly Comparison Chart
@@ -176,7 +180,7 @@ fig_monthly.update_layout(
     yaxis_title='Valor (R$)'
 )
 
-st.plotly_chart(fig_monthly, use_container_width=True)
+st.plotly_chart(fig_monthly, use_container_width=True, help="Gráfico comparativo mostrando renda e despesas para cada mês do período selecionado.")
 
 # Savings Trend
 col1, col2 = st.columns(2)
@@ -199,7 +203,7 @@ with col1:
         yaxis_title='Economia (R$)'
     )
     
-    st.plotly_chart(fig_savings, use_container_width=True)
+    st.plotly_chart(fig_savings, use_container_width=True, help="Evolução da economia ao longo dos 3 meses. Valores positivos indicam economia, negativos indicam déficit.")
 
 with col2:
     fig_savings_rate = go.Figure()
@@ -227,7 +231,7 @@ with col2:
         yaxis_title='Taxa de Economia (%)'
     )
     
-    st.plotly_chart(fig_savings_rate, use_container_width=True)
+    st.plotly_chart(fig_savings_rate, use_container_width=True, help="Taxa de economia como porcentagem da renda. A linha verde representa a meta de 20%.")
 
 # Detailed Analysis Section
 st.markdown("---")
@@ -254,7 +258,7 @@ if 'Categoria' in monthly_data[last_3_months[-1]].columns or 'Category' in month
             title='Despesas por Categoria (3 meses)'
         )
         fig_category.update_layout(height=400)
-        st.plotly_chart(fig_category, use_container_width=True)
+        st.plotly_chart(fig_category, use_container_width=True, help="Distribuição das despesas por categoria nos 3 meses analisados.")
     
     with col2:
         # Top 5 categories
@@ -264,7 +268,8 @@ if 'Categoria' in monthly_data[last_3_months[-1]].columns or 'Category' in month
             st.metric(
                 f"{i}. {category}",
                 f"R$ {amount:,.2f}",
-                delta=f"{percentage:.1f}% do total"
+                delta=f"{percentage:.1f}% do total",
+                help=f"Total gasto em {category} nos 3 meses analisados, representando {percentage:.1f}% de todas as despesas."
             )
 
 # Payment Status Analysis
@@ -308,7 +313,7 @@ with col1:
         height=400
     )
     
-    st.plotly_chart(fig_payment_status, use_container_width=True)
+    st.plotly_chart(fig_payment_status, use_container_width=True, help="Valor das contas pagas vs não pagas por mês. Barras empilhadas mostram o total de despesas.")
 
 with col2:
     fig_payment_rate = go.Figure()
@@ -334,7 +339,7 @@ with col2:
         yaxis_title='Taxa de Pagamento (%)'
     )
     
-    st.plotly_chart(fig_payment_rate, use_container_width=True)
+    st.plotly_chart(fig_payment_rate, use_container_width=True, help="Porcentagem de contas pagas em dia por mês. A linha verde representa a meta de 90%.")
 
 # Insights and Recommendations
 st.markdown("---")
@@ -351,10 +356,10 @@ col1, col2 = st.columns(2)
 with col1:
     st.subheader("📊 Estatísticas Importantes")
     
-    st.metric("Economia Média Mensal", f"R$ {avg_monthly_savings:,.2f}")
-    st.metric("Volatilidade da Economia", f"R$ {savings_volatility:,.2f}")
-    st.metric("Volatilidade da Renda", f"R$ {income_volatility:,.2f}")
-    st.metric("Volatilidade das Despesas", f"R$ {expense_volatility:,.2f}")
+    st.metric("Economia Média Mensal", f"R$ {avg_monthly_savings:,.2f}", help="Valor médio economizado por mês nos últimos 3 meses.")
+    st.metric("Volatilidade da Economia", f"R$ {savings_volatility:,.2f}", help="Desvio padrão da economia mensal. Valores altos indicam inconsistência.")
+    st.metric("Volatilidade da Renda", f"R$ {income_volatility:,.2f}", help="Desvio padrão da renda mensal. Valores altos indicam renda instável.")
+    st.metric("Volatilidade das Despesas", f"R$ {expense_volatility:,.2f}", help="Desvio padrão das despesas mensais. Valores altos indicam gastos irregulares.")
 
 with col2:
     st.subheader("🎯 Recomendações")
