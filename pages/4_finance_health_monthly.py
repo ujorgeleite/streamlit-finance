@@ -98,25 +98,14 @@ def load_credit_card_data():
                         portador = None
                         final_cartao = None
                         
-                        # Debug: Log do arquivo sendo processado
-                        st.sidebar.write(f"Processando PDF: {filename}")
+                
                         
                         for page in pdf.pages:
                             text = page.extract_text()
                             if not text:
                                 continue
                             
-                            # Debug: Mostrar mais linhas do texto extraído
-                            if portador is None:
-                                st.sidebar.write(f"Primeiras linhas do PDF:")
-                                for i, line in enumerate(text.split('\n')[:10]):
-                                    st.sidebar.write(f"  {i+1}: {line}")
-                            
-                            # Debug: Mostrar linhas que contêm datas
                             linhas_com_data = []
-                            for i, line in enumerate(text.split('\n')):
-                                if re.search(r'\d{2}/\d{2}', line):
-                                    linhas_com_data.append((i+1, line))
                             
                             if linhas_com_data:
                                 st.sidebar.write(f"Linhas com datas encontradas:")
@@ -128,24 +117,21 @@ def load_credit_card_data():
                                 m_portador = re.match(r"Titular\s+([A-Z\s]+)", line.strip())
                                 if m_portador:
                                     portador = m_portador.group(1).strip()
-                                    st.sidebar.write(f"Portador detectado: {portador}")
+                                    
                                     continue
                                 
                                 # Detectar final do cartão pelo padrão Itaú
                                 m_cartao = re.match(r"Cart[aã]o\s+.*(\d{4})", line.strip())
                                 if m_cartao:
                                     final_cartao = m_cartao.group(1)
-                                    st.sidebar.write(f"Final do cartão detectado: {final_cartao}")
+                                    
                                     continue
                                 
                                 ano = datetime.now().year
                                 transacoes = extract_transactions(line, portador, final_cartao, filename, mes, ano)
                                 rows.extend(transacoes)
                         
-                        # Debug: Log do resultado
-                        st.sidebar.write(f"Portador final: {portador}")
-                        st.sidebar.write(f"Final do cartão final: {final_cartao}")
-                        st.sidebar.write(f"Total de transações extraídas: {len(rows)}")
+                      
                         
                         if rows:
                             df = pd.DataFrame(rows)
